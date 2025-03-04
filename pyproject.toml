@@ -1,0 +1,18 @@
+[project]
+name = "query-ui"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "hutch-bunny",
+]
+
+[tool.uv.sources]
+hutch-bunny = { git = "https://github.com/Health-Informatics-UoN/hutch-bunny", rev = "feat/build-pip" }
+
+[dependency-groups]
+dev = [
+    "mypy>=1.15.0",
+    "ruff>=0.9.9",
+]
