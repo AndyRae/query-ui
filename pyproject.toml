@@ -15,5 +15,6 @@ hutch-bunny = { git = "https://github.com/Health-Informatics-UoN/hutch-bunny", r
 [dependency-groups]
 dev = [
     "mypy>=1.15.0",
+    "pandas-stubs>=2.2.3.241126",
     "ruff>=0.9.9",
 ]
