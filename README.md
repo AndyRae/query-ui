@@ -10,4 +10,8 @@ run:
 ```bash
 uv sync
 streamlit run app.py
+
+or
+
+jupyter notebook
 ```
