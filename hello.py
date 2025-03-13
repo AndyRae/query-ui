@@ -1,9 +1,12 @@
+import time
 from hutch_bunny.core.upstream.task_api_client import TaskApiClient
 from hutch_bunny.core.settings import get_settings, DaemonSettings
 from hutch_bunny.core.rquest_dto.cohort import Cohort
 from hutch_bunny.core.rquest_dto.group import Group
-from hutch_bunny.core.rquest_dto.rule import Rule
 from availability_query import CustomAvailabilityQuery
+from rule import CustomRule
+from query_result import QueryResult
+from job_response import JobResponse
 
 settings: DaemonSettings = get_settings(daemon=True)
 
@@ -13,9 +16,11 @@ url = "/task/"
 groups = [
     Group(
         rules=[
-            Rule(varname="OMOP", varcat="Person", type="TEXT", oper="=", value="8507")
+            CustomRule(
+                varname="OMOP", varcat="Person", type_="TEXT", operator="=", value="8507"
+            )
         ],
-        rules_operator="OR",
+        rules_operator="AND",
     )
 ]
 cohort = Cohort(groups=groups, groups_operator="OR")
@@ -33,4 +38,15 @@ payload = {"application": "AVAILABILITY_QUERY", "input": query.to_dict()}
 
 response = client.post(url, data=payload)
 
-print(response.json())
+job_response = JobResponse.from_dict(response.json())
+
+# sleep
+time.sleep(5)
+
+url = f"/task/results/{job_response.job_uuid}/{settings.COLLECTION_ID}"
+
+response = client.get(url)
+
+result = QueryResult.from_api_response(response.json())
+
+print(result)
