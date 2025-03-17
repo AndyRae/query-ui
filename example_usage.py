@@ -19,7 +19,7 @@ table = builder.build_contingency_table(client, settings.COLLECTION_ID, "user1")
 # The results are now clearly labeled
 print(f"""
 2x2 Contingency Table:
-                    With Bronchitis    Without Bronchitis
+                    With Ulcer of esophagus    Without Ulcer of esophagus
 Male:              {table['exposed']['with_outcome']}    {table['exposed']['without_outcome']}
 Female:            {table['unexposed']['with_outcome']}    {table['unexposed']['without_outcome']}
 """)
