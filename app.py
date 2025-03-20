@@ -4,6 +4,11 @@ from hutch_bunny.core.upstream.task_api_client import TaskApiClient
 from hutch_bunny.core.settings import get_settings, DaemonSettings
 import pandas as pd
 
+from contingency_stats.methods.fishers_exact import FishersExactTest
+from contingency_stats.methods.chi_squared import ChiSquaredTest
+from contingency_stats.contingency_utils import create_contingency_typeddict
+
+
 def create_contingency_table(results: list) -> pd.DataFrame:
     """Creates a pandas DataFrame for the contingency table"""
     # Assuming results are in order: [11, 10, 01, 00]
@@ -87,11 +92,38 @@ def main():
                 st.subheader("Basic Statistics")
                 total = sum(sum(cell for cell in row.values()) for row in table.values())
                 st.write(f"Total number of patients: {total}")
-                
+
                 # Safer odds ratio calculation
                 odds_ratio = calculate_odds_ratio(table)
                 st.write(f"Odds Ratio: {odds_ratio}")
-                
+
+                ct = create_contingency_typeddict([
+                    table["exposed"]["with_outcome"],
+                    table["exposed"]["without_outcome"],
+                    table["unexposed"]["with_outcome"],
+                    table["unexposed"]["without_outcome"]
+                ])
+
+                # Run Fisher's Exact Test
+                fisher_test = FishersExactTest()
+                fisher_result = fisher_test.calculate(ct)
+
+                st.subheader("Fisher's Exact Test")
+                st.write(f"P-value: {fisher_result.p_value:.3f}")
+                st.write(f"Odds Ratio: {fisher_result.odds_ratio:.2f}")
+                st.write(f"Confidence Interval: {fisher_result.confidence_interval}")
+                st.write(f"Interpretation: {fisher_result.interpretation}")
+
+                # Run Chi-Squared Test
+                chi_test = ChiSquaredTest()
+                chi_result = chi_test.calculate(ct)
+
+                st.subheader("Chi-Squared Test")
+                st.write(f"P-value: {chi_result.p_value:.3f}")
+                st.write(f"Chi-Squared Statistic: {chi_result.test_statistic:.2f}")
+                st.write(f"Degrees of Freedom: {chi_result.degrees_of_freedom}")
+                st.write(f"Interpretation: {chi_result.interpretation}")
+
             except Exception as e:
                 st.error(f"An error occurred: {str(e)}")
     
