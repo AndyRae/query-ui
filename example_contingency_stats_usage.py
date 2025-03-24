@@ -19,6 +19,7 @@ table: ContingencyTable = {
 }
 
 # Example Question: “Is smoking status related to having (or not having) the disease?”
+# Null Hypothesis: There is no association between smoking status and disease status
 # Use: A Chi-Square test of independence or, for small counts, Fisher’s Exact test.
 # Insight: smoking status and disease status occur together more (or less) often than chance would predict
 # i.e., is there a statistical association?

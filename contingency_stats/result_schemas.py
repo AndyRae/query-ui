@@ -23,6 +23,7 @@ class ChiSquaredResult(BaseStatResult):
 
     test_statistic: float = Field(..., description="Chi-squared statistic value")
     degrees_of_freedom: int = Field(..., description="Degrees of freedom")
+    cramers_v: float = Field(..., description="Cramér's V effect size")
     expected_values: Optional[List[List[float]]] = Field(
         None, description="Expected values for each cell"
     )
