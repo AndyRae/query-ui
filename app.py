@@ -16,6 +16,19 @@ def create_contingency_table(results: list) -> pd.DataFrame:
         index=['Exposure +', 'Exposure -']
     )
 
+def calculate_odds_ratio(table: dict) -> str:
+    try:
+        numerator = table["exposed"]["with_outcome"] * table["unexposed"]["without_outcome"]
+        denominator = table["exposed"]["without_outcome"] * table["unexposed"]["with_outcome"]
+        
+        if denominator == 0:
+            return "Cannot calculate (division by zero)"
+        
+        odds_ratio = numerator / denominator
+        return f"{odds_ratio:.2f}"
+    except Exception as e:
+        return f"Error calculating odds ratio: {str(e)}"
+
 def main():
     st.title("OMOP Contingency Table Builder")
     
@@ -25,7 +38,7 @@ def main():
         
         # Exposure parameters
         st.subheader("Exposure")
-        exposure_omop = st.text_input("Exposure OMOP Code")
+        exposure_omop = st.text_input("Exposure OMOP Code", value="8507")
         exposure_table = st.selectbox(
             "Exposure Table",
             ["Condition", "Drug", "Procedure", "Measurement", "Observation"]
@@ -33,7 +46,7 @@ def main():
         
         # Outcome parameters
         st.subheader("Outcome")
-        outcome_omop = st.text_input("Outcome OMOP Code")
+        outcome_omop = st.text_input("Outcome OMOP Code", value="24970")
         outcome_table = st.selectbox(
             "Outcome Table",
             ["Condition", "Drug", "Procedure", "Measurement", "Observation"]
@@ -51,7 +64,7 @@ def main():
                 client = TaskApiClient(settings)
                 
                 # Create and execute query
-                contingency_builder = ContingencyTableQuery(
+                builder = ContingencyTableQuery(
                     exposure_omop_code=exposure_omop,
                     outcome_omop_code=outcome_omop,
                     exposure_table=exposure_table,
@@ -60,36 +73,24 @@ def main():
                 
                 # Execute queries and get job responses
                 with st.spinner("Executing queries..."):
-                    job_responses = contingency_builder.execute_queries(
+                    table = builder.build_contingency_table(
                         client=client,
                         collection_id=settings.COLLECTION_ID,
                         owner="user1"
                     )
                 
-                # Wait for jobs to complete
-                with st.spinner("Waiting for results..."):
-                    completed_jobs = contingency_builder.wait_for_jobs(client, job_responses)
-                
-                # Fetch results
-                with st.spinner("Fetching results..."):
-                    results = contingency_builder.fetch_results(client, completed_jobs)
-                
-                # Create and display contingency table
-                contingency_table = create_contingency_table(results)
-                
                 # Display results
                 st.header("Results")
-                st.dataframe(contingency_table)
+                st.dataframe(table)
                 
-                # Add some basic statistics
+                # Calculate and display statistics
                 st.subheader("Basic Statistics")
-                total = contingency_table.sum().sum()
+                total = sum(sum(cell for cell in row.values()) for row in table.values())
                 st.write(f"Total number of patients: {total}")
                 
-                # Calculate odds ratio
-                odds_ratio = (contingency_table.iloc[0,0] * contingency_table.iloc[1,1]) / \
-                           (contingency_table.iloc[0,1] * contingency_table.iloc[1,0])
-                st.write(f"Odds Ratio: {odds_ratio:.2f}")
+                # Safer odds ratio calculation
+                odds_ratio = calculate_odds_ratio(table)
+                st.write(f"Odds Ratio: {odds_ratio}")
                 
             except Exception as e:
                 st.error(f"An error occurred: {str(e)}")
