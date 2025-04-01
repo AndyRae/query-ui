@@ -46,7 +46,7 @@ def main():
         exposure_omop = st.text_input("Exposure OMOP Code", value="8507")
         exposure_table = st.selectbox(
             "Exposure Table",
-            ["Condition", "Drug", "Procedure", "Measurement", "Observation"]
+            ["Person","Condition", "Drug", "Procedure", "Measurement", "Observation"]
         )
         
         # Outcome parameters
@@ -135,10 +135,8 @@ def main():
     3. Click "Run Query" to generate the contingency table
     
     ### Example OMOP Codes
-    - Diabetes mellitus: 201820
-    - Heart disease: 316139
+    - Chronic Laryngitis: 24970
     - Male: 8507
-    - Female: 8532
     """)
 
 if __name__ == "__main__":

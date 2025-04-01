@@ -83,6 +83,8 @@ class ContingencyTableQuery:
         # Get results
         result_response = client.get(f"/task/results/{job_response.job_uuid}/{collection_id}")
         result = QueryResult.from_api_response(result_response.json())
+
+        print(result)
         
         return result.queryResult.count
 
