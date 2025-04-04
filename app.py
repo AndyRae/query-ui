@@ -37,8 +37,19 @@ def calculate_odds_ratio(table: dict) -> str:
 def main():
     st.title("OMOP Contingency Table Builder")
     
-    # Sidebar for input parameters
+    # Sidebar for instructions and input parameters
     with st.sidebar:
+        st.header("Instructions")
+        st.markdown("""
+        1. Enter the OMOP codes for your exposure and outcome variables
+        2. Select the appropriate tables for each variable
+        3. Click "Run Query" to generate the contingency table
+        
+        ### Example OMOP Codes
+        - Chronic Laryngitis: 24970
+        - Male: 8507
+        """)
+        
         st.header("Query Parameters")
         
         # Exposure parameters
@@ -84,60 +95,72 @@ def main():
                         owner="user1"
                     )
                 
-                # Display results
-                st.header("Results")
-                st.dataframe(table)
-                
-                # Calculate and display statistics
-                st.subheader("Basic Statistics")
-                total = sum(sum(cell for cell in row.values()) for row in table.values())
-                st.write(f"Total number of patients: {total}")
-
-                # Safer odds ratio calculation
-                odds_ratio = calculate_odds_ratio(table)
-                st.write(f"Odds Ratio: {odds_ratio}")
-
-                ct = create_contingency_typeddict([
-                    table["exposed"]["with_outcome"],
-                    table["exposed"]["without_outcome"],
-                    table["unexposed"]["with_outcome"],
-                    table["unexposed"]["without_outcome"]
-                ])
-
-                # Run Fisher's Exact Test
-                fisher_test = FishersExactTest()
-                fisher_result = fisher_test.calculate(ct)
-
-                st.subheader("Fisher's Exact Test")
-                st.write(f"P-value: {fisher_result.p_value:.3f}")
-                st.write(f"Odds Ratio: {fisher_result.odds_ratio:.2f}")
-                st.write(f"Confidence Interval: {fisher_result.confidence_interval}")
-                st.write(f"Interpretation: {fisher_result.interpretation}")
-
-                # Run Chi-Squared Test
-                chi_test = ChiSquaredTest()
-                chi_result = chi_test.calculate(ct)
-
-                st.subheader("Chi-Squared Test")
-                st.write(f"P-value: {chi_result.p_value:.3f}")
-                st.write(f"Chi-Squared Statistic: {chi_result.test_statistic:.2f}")
-                st.write(f"Degrees of Freedom: {chi_result.degrees_of_freedom}")
-                st.write(f"Interpretation: {chi_result.interpretation}")
+                # Store results in session state to display in main content
+                st.session_state['results'] = {
+                    'table': table,
+                    'exposure_omop': exposure_omop,
+                    'outcome_omop': outcome_omop,
+                    'query_payloads': builder.query_payloads
+                }
 
             except Exception as e:
                 st.error(f"An error occurred: {str(e)}")
     
-    # Main content area
-    st.markdown("""
-    ### Instructions
-    1. Enter the OMOP codes for your exposure and outcome variables
-    2. Select the appropriate tables for each variable
-    3. Click "Run Query" to generate the contingency table
-    
-    ### Example OMOP Codes
-    - Chronic Laryngitis: 24970
-    - Male: 8507
-    """)
+    # Main content area for displaying results
+    if 'results' in st.session_state:
+        results = st.session_state['results']
+        
+        st.header("Results")
+        st.dataframe(results['table'])
+        
+        # Calculate and display statistics
+        st.subheader("Basic Statistics")
+        total = sum(sum(cell for cell in row.values()) for row in results['table'].values())
+        st.write(f"Total number of patients: {total}")
+
+        # Safer odds ratio calculation
+        odds_ratio = calculate_odds_ratio(results['table'])
+        st.write(f"Odds Ratio: {odds_ratio}")
+
+        ct = create_contingency_typeddict([
+            results['table']["exposed"]["with_outcome"],
+            results['table']["exposed"]["without_outcome"],
+            results['table']["unexposed"]["with_outcome"],
+            results['table']["unexposed"]["without_outcome"]
+        ])
+
+        # Run Fisher's Exact Test
+        fisher_test = FishersExactTest()
+        fisher_result = fisher_test.calculate(ct)
+
+        st.subheader("Fisher's Exact Test")
+        st.write(f"P-value: {fisher_result.p_value:.3f}")
+        st.write(f"Odds Ratio: {fisher_result.odds_ratio:.2f}")
+        st.write(f"Confidence Interval: {fisher_result.confidence_interval}")
+        st.write(f"Interpretation: {fisher_result.interpretation}")
+
+        # Run Chi-Squared Test
+        chi_test = ChiSquaredTest()
+        chi_result = chi_test.calculate(ct)
+
+        st.subheader("Chi-Squared Test")
+        st.write(f"P-value: {chi_result.p_value:.3f}")
+        st.write(f"Chi-Squared Statistic: {chi_result.test_statistic:.2f}")
+        st.write(f"Degrees of Freedom: {chi_result.degrees_of_freedom}")
+        st.write(f"Interpretation: {chi_result.interpretation}")
+        
+        # Display query payloads
+        st.subheader("Query Payloads")
+        with st.expander("Exposed with Outcome"):
+            st.json(results['query_payloads']['exposed_with_outcome'])
+        with st.expander("Exposed without Outcome"):
+            st.json(results['query_payloads']['exposed_without_outcome'])
+        with st.expander("Unexposed with Outcome"):
+            st.json(results['query_payloads']['unexposed_with_outcome'])
+        with st.expander("Unexposed without Outcome"):
+            st.json(results['query_payloads']['unexposed_without_outcome'])
+    else:
+        st.info("Enter query parameters in the sidebar and click 'Run Query' to see results.")
 
 if __name__ == "__main__":
     main() 
